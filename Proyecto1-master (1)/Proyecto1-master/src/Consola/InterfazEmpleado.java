@@ -1,0 +1,455 @@
+package Consola;
+import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Random;
+import java.time.LocalDate;
+import java.time.ZoneId;
+
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+
+import Inventario.Inventario;
+import SistemaAlquiler.AgendaCarro;
+import SistemaAlquiler.Categoria;
+import SistemaAlquiler.Cliente;
+import SistemaAlquiler.Reserva;
+import SistemaAlquiler.Sede;
+import SistemaAlquiler.Vehiculo;
+import SistemaAlquiler.*;
+
+public class InterfazEmpleado extends JFrame {
+	Inventario inventario;
+	VehiculoRentalSystem rentalSystem;
+	//InterfazCliente interfazCliente;
+	
+	
+	public InterfazEmpleado(Inventario inventario) {
+		this.inventario = inventario;
+		rentalSystem = inventario.getAplicacion();
+		if (validacionEmpleado()) {
+			setTitle("Interfaz Empleado");
+			setDefaultCloseOperation(EXIT_ON_CLOSE);
+			setSize(400, 300);
+			setResizable(false);
+			setLocationRelativeTo(null);
+	      
+			getContentPane().removeAll();
+
+			JPanel panel = new JPanel();
+			panel.setLayout(new GridLayout(6, 1));
+
+			JButton recibirCarroButton = new JButton("Recibir carro");
+			JButton generarReservaButton = new JButton("Generar reserva");
+			JButton entregarCarroButton = new JButton("Entregar carro");
+			JButton reportarMantenimientoButton = new JButton("Reportar carro que necesita mantenimiento");
+			JButton salirButton = new JButton("Volver al menu principal");
+			JLabel texto = new JLabel("¿Qué desea hacer?");
+			texto.setHorizontalAlignment(JLabel.CENTER);
+
+			panel.add(texto);
+			panel.add(recibirCarroButton);
+			panel.add(generarReservaButton);
+			panel.add(entregarCarroButton);
+			panel.add(reportarMantenimientoButton);
+			panel.add(salirButton);
+
+			add(panel);
+
+			recibirCarroButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					opcion1Empleado();
+				}
+			});
+	      
+			generarReservaButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+	            	opcion2Empleado();
+				}
+			});
+
+			entregarCarroButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					opcion3Empleado();
+				}
+			});
+
+			reportarMantenimientoButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					opcion4Empleado();
+				}
+			});
+
+			salirButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					getContentPane().removeAll();
+					System.exit(0);
+				}
+			});
+			}
+	  	}
+	public void opcion1Empleado() {
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(500, 300);
+        setLocationRelativeTo(null);
+
+        JLabel nombreLabel = new JLabel("Ingrese el nombre del cliente que está retornando el vehículo:");    
+        JTextField nombreTextField = new JTextField();
+        JLabel fechaLabel = new JLabel("Ingrese la fecha en la que se está recibiendo el vehículo (dd/MM/yyyy):");
+        JTextField fechaTextField = new JTextField();
+        JPanel panel = new JPanel(new GridLayout(4, 1));
+        panel.add(nombreLabel);
+        panel.add(nombreTextField);
+        panel.add(fechaLabel);
+        panel.add(fechaTextField);
+        
+        int result = JOptionPane.showConfirmDialog(null, panel,
+                "Recepción de Vehículos", JOptionPane.OK_CANCEL_OPTION);
+        
+        if (result == JOptionPane.OK_OPTION) {
+        	String nombre = nombreTextField.getText();
+        	String fecha = fechaTextField.getText();
+        	try {
+            	SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+                Date fechaHoy = dateFormat.parse(fecha);
+                
+                LocalDate localDate = fechaHoy.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+                LocalDate fechaSumada = localDate.plusDays(2);
+                Date fechaFinal = Date.from(fechaSumada.atStartOfDay(ZoneId.systemDefault()).toInstant());
+                boolean recibido = false;
+                for(Reserva reserva: rentalSystem.getReservas()) {
+                	if(reserva.getCliente().equals(nombre) && reserva.getEstado().equals("vigente")) {
+                		String carId = reserva.getIdCarro();
+                		rentalSystem.returnVehiculo(carId, fechaHoy, fechaFinal);
+                		
+                		JOptionPane.showMessageDialog(null, "Vehículo retornado de manera exitosa", "A partir de este momento la tarjeta del cliente queda nuevamente activada", JOptionPane.INFORMATION_MESSAGE);
+                		recibido = true;
+                		break;
+                	}
+                }
+                if(!recibido) {
+                	JOptionPane.showMessageDialog(null, "El cliente no tiene ninguna reserva vigente");
+                }
+            }catch(ParseException e) {
+            	JOptionPane.showMessageDialog(null, "La fecha no está en formato (dd/MM/yyyy)", "Formato Incorrecto", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+	}
+	public void opcion2Empleado() {
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(500, 300);
+        setLocationRelativeTo(null);
+
+        JLabel nombreLabel = new JLabel("Ingrese el nombre del cliente:");
+        JTextField nombreTextField = new JTextField();
+        JPanel panel = new JPanel(new GridLayout(2, 2));
+        panel.add(nombreLabel);
+        panel.add(nombreTextField);
+		
+		int result = JOptionPane.showConfirmDialog(null, panel,
+                "Recepción de Vehículos", JOptionPane.OK_CANCEL_OPTION);
+        
+        if (result == JOptionPane.OK_OPTION) {
+        	boolean registrado = true;
+        	String nombreCliente = nombreTextField.getText();
+        	for(String clienteStr: rentalSystem.getClientes().keySet()) {
+    			if(clienteStr.equals(nombreCliente)) {
+    				Cliente cliente = rentalSystem.getClientes().get(nombreCliente);
+    				InterfazCliente interfazCliente = new InterfazCliente(inventario);
+    				registrado = false;
+    			}
+        	}
+        	if(registrado) {
+        		JOptionPane.showMessageDialog(null, "El cliente no está registrado en el sistema, pidale que se registre");
+        	}
+		}
+	}
+	public void opcion3Empleado() {
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(500, 300);
+        setLocationRelativeTo(null);
+        
+        String pasarela = elegirPasarela();
+        
+        JLabel nombreLabel = new JLabel("Ingrese el nombre del cliente para buscar su reserva:");    
+        JTextField nombreTextField = new JTextField();
+        JPanel panel = new JPanel(new GridLayout(2, 1));
+        panel.add(nombreLabel);
+        panel.add(nombreTextField);
+        
+        int result = JOptionPane.showConfirmDialog(null, panel,
+                "Entrega de Vehículos", JOptionPane.OK_CANCEL_OPTION);
+        
+        if (result == JOptionPane.OK_OPTION) {
+        	boolean error = true;
+        	Reserva reservaEvaluada = null;
+        	for(Reserva reserva: rentalSystem.getReservas()) {
+        		String nombreCliente = nombreTextField.getText();
+        		if(reserva.getCliente().equals(nombreCliente)) {
+        			reservaEvaluada = reserva;
+        			rentalSystem.AgregarConductoresReserva(reservaEvaluada);
+        		
+        			Categoria categoria = rentalSystem.getCategorias().get(reservaEvaluada.getCategoria());
+	            
+        			double PrecioBase = reservaEvaluada.getPrecioBase();
+        			double PrecioAbonado = reservaEvaluada.getPrecioAbonado();
+        			double PrecioConductores = reservaEvaluada.getPrecioConductores(PrecioBase, categoria.getvalorAdicionalConductor());
+        			double PrecioTodo = PrecioAbonado-PrecioConductores;
+        			error = false;
+        			
+        			
+        			if(pasarela != null) {
+        				realizarPago(pasarela,PrecioTodo);
+        			}
+        			
+        			for(Vehiculo car : rentalSystem.getVehiculos()) {
+        				if(car.getVehiculoId().equals(reservaEvaluada.getIdCarro())) {
+        					car.setUbicacion("Alquilado");
+        				}
+        			}
+	            }
+        	}
+        	if(error) {
+                JOptionPane.showMessageDialog(null, "No hay reservas a su nombre", "Cliente sin reservas", JOptionPane.ERROR_MESSAGE);
+                }
+        }
+	}
+    public void opcion4Empleado() {
+    	setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    	setSize(500, 300);
+        setLocationRelativeTo(null);
+        
+        JLabel carIdLabel = new JLabel("Ingrese el ID (placa) del vehículo que necesita mantenimiento:");    
+        JTextField carIdTextField = new JTextField();
+        JLabel fechaLabel = new JLabel("Ingrese la fecha en la que el vehículo estará en mantenimiento (dd/MM/yyyy):");    
+        JTextField fechaTextField = new JTextField();
+        JLabel cantDiasLabel = new JLabel("Ingrese la cantidad de días que el vehículo estará en mantenimiento:");    
+        JTextField cantDiasTextField = new JTextField();
+        
+        
+        JPanel panelMantenimiento = new JPanel(new GridLayout(6, 1));
+        panelMantenimiento.add(carIdLabel);
+        panelMantenimiento.add(carIdTextField);
+        panelMantenimiento.add(fechaLabel);
+        panelMantenimiento.add(fechaTextField);
+        panelMantenimiento.add(cantDiasLabel);
+        panelMantenimiento.add(cantDiasTextField);
+        
+        int result = JOptionPane.showConfirmDialog(null, panelMantenimiento,
+                "Mantenimiento de Vehiculo", JOptionPane.OK_CANCEL_OPTION);
+        
+        if (result == JOptionPane.OK_OPTION) {
+        String carId = carIdTextField.getText();
+        String fechaHoyStr = fechaTextField.getText();
+        String cantDiasStr = cantDiasTextField.getText();
+        int cantDias = Integer.parseInt(cantDiasStr);
+        	try {
+        		SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+            	Date fechaHoy = dateFormat.parse(fechaHoyStr);
+            
+            	LocalDate localDate = fechaHoy.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            	LocalDate fechaSumada = localDate.plusDays(cantDias-1);
+            	Date fechaFinal = Date.from(fechaSumada.atStartOfDay(ZoneId.systemDefault()).toInstant());
+            
+            	rentalSystem.carroEnMantenimiento(carId, fechaHoy, fechaFinal);
+        	}catch(ParseException e) {
+        		JOptionPane.showMessageDialog(null, "La fecha no está en formato (dd/MM/yyyy)", "Formato Incorrecto", JOptionPane.ERROR_MESSAGE);
+        	}
+        }
+	}
+	
+    	/**
+    	 * Realiza la validación de un empleado, solicitando su nombre de usuario y contraseña.
+    	 * Si las credenciales son válidas, muestra el menú de opciones del empleado correspondiente.
+    	 *
+    	 * @param scanner El objeto Scanner para la entrada de usuario.
+    	 * @throws ParseException Si ocurre un error de análisis de fecha.
+    	 */
+    public boolean validacionEmpleado() {
+    	boolean validacion = false;
+        while(!validacion) {
+        	String empleadoUsername = JOptionPane.showInputDialog("Ingrese su usuario de empleado:");
+            String empleadoPassword = JOptionPane.showInputDialog("Ingrese su contraseña:");
+            
+            for(Empleado empleado : rentalSystem.getEmpleados()) {
+            	if(empleado.getLogin().equals(empleadoUsername) && empleado.getContrasena().equals(empleadoPassword)) {
+            		validacion = true;
+            	}
+            }
+            if(validacion == false) {
+            	JOptionPane.showMessageDialog(null, "Nombre de usuario o contraseña incorrectos", "Acceso denegado", JOptionPane.INFORMATION_MESSAGE);
+            }
+        }
+		return validacion;
+	}
+    
+    public String elegirPasarela() {
+        Object[] opciones = {"PayU", "PayPal", "PagoSire"};
+        int seleccion = JOptionPane.showOptionDialog(
+                null,
+                "Seleccione la pasarela de banco:",
+                "Selección de Pasarela",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                opciones,
+                opciones[0]
+        );
+
+        if (seleccion == -1) {
+            // El usuario cerró el cuadro de diálogo
+            return null;
+        }
+
+        return opciones[seleccion].toString();
+    }
+    
+    public void realizarPago(String pasarela, double monto) {
+        // Solicitar el número de tarjeta al usuario
+        String numeroTarjeta = JOptionPane.showInputDialog("Ingrese el número de tarjeta:");
+
+        // Verificar que el número de tarjeta no sea nulo y no esté vacío
+        if (numeroTarjeta == null || numeroTarjeta.isEmpty()) {
+            JOptionPane.showMessageDialog(
+                    null,
+                    "Número de tarjeta inválido",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            return;
+        }
+
+        // Resto del código para obtener nombreTitular, monto y fechaVencimiento (puedes implementarlo)
+     // Solicitar el nombre del titular de la tarjeta
+        String nombreTitular = JOptionPane.showInputDialog("Ingrese el nombre del titular de la tarjeta:");
+
+        // Verificar que el nombre del titular no sea nulo y no esté vacío
+        if (nombreTitular == null || nombreTitular.isEmpty()) {
+            JOptionPane.showMessageDialog(
+                    null,
+                    "Nombre del titular inválido",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            return;
+        }
+
+
+        try {
+         
+            if (monto <= 0) {
+                throw new NumberFormatException();
+            }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(
+                    null,
+                    "Monto inválido. Ingrese un número positivo.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            return;
+        }
+
+        // Solicitar la fecha de vencimiento de la tarjeta
+        String fechaVencimientoStr = JOptionPane.showInputDialog("Ingrese la fecha de vencimiento de la tarjeta (MM/yyyy):");
+
+        // Verificar que la fecha de vencimiento no sea nula, no esté vacía y sea un formato válido
+        if (fechaVencimientoStr == null || fechaVencimientoStr.isEmpty() || !fechaVencimientoStr.matches("\\d{2}/\\d{4}")) {
+            JOptionPane.showMessageDialog(
+                    null,
+                    "Formato de fecha de vencimiento inválido. Utilice el formato MM/yyyy.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            return;
+        }
+
+        // Convertir la fecha de vencimiento a un objeto Date
+        Date fechaVencimiento;
+        try {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("MM/yyyy");
+            fechaVencimiento = dateFormat.parse(fechaVencimientoStr);
+        } catch (ParseException e) {
+            JOptionPane.showMessageDialog(
+                    null,
+                    "Error al procesar la fecha de vencimiento.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            return;
+        }
+
+        IPasarelaDePago pasarelaDePago = null;
+
+        switch (pasarela) {
+            case "PayPal":
+                pasarelaDePago = new PasarelaPagoPayPal();
+                break;
+            case "PayU":
+                pasarelaDePago = new PasarelaPagoPayU();
+                break;
+            case "PagoSire":
+                pasarelaDePago = new PasarelaPagoSire();
+                break;
+            default:
+                JOptionPane.showMessageDialog(
+                        null,
+                        "Error: Pasarela de pago no válida",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE
+                );
+                return;
+        }
+
+        // Llamada a procesarPago y bloquearCupo con el número de tarjeta ingresado
+        boolean pagoExitoso = pasarelaDePago.procesarPago(numeroTarjeta, nombreTitular, monto, fechaVencimiento);
+
+        if (pagoExitoso) {
+            boolean cupoBloqueado = pasarelaDePago.bloquearCupo(numeroTarjeta, monto);
+
+            if (cupoBloqueado) {
+                JOptionPane.showMessageDialog(
+                        null,
+                        "Pago realizado con éxito a través de la pasarela " + pasarela + ". La tarjeta ha sido bloqueada.",
+                        "Pago Exitoso",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
+            } else {
+                JOptionPane.showMessageDialog(
+                        null,
+                        "Error al bloquear el cupo de la tarjeta",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            }
+        } else {
+            JOptionPane.showMessageDialog(
+                    null,
+                    "Error al procesar el pago",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
+    }
+
+
+    
+    
+	
+}
