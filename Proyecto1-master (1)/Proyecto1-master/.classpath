@@ -11,5 +11,9 @@
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="/Users/valentinalara/Downloads/pdfbox-app-2.0.30.jar"/>
+	<classpathentry kind="lib" path="/Users/valentinalara/Downloads/fontbox-2.0.30.jar"/>
+	<classpathentry kind="lib" path="/Users/valentinalara/Downloads/pdfbox-tools-2.0.30.jar"/>
+	<classpathentry kind="lib" path="/Users/valentinalara/Downloads/preflight-2.0.30.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

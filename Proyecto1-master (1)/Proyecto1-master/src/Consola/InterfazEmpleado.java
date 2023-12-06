@@ -1,35 +1,55 @@
 package Consola;
+import java.awt.Desktop;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Random;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.Date;
 
-import javax.swing.BoxLayout;
 import javax.swing.JButton;
-import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.imageio.ImageIO;
+
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.PDResources;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory;
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
+
+
+
+
 
 import Inventario.Inventario;
-import SistemaAlquiler.AgendaCarro;
 import SistemaAlquiler.Categoria;
 import SistemaAlquiler.Cliente;
+import SistemaAlquiler.Empleado;
+import SistemaAlquiler.IPasarelaDePago;
+import SistemaAlquiler.PasarelaPagoPayPal;
+import SistemaAlquiler.PasarelaPagoPayU;
+import SistemaAlquiler.PasarelaPagoSire;
 import SistemaAlquiler.Reserva;
-import SistemaAlquiler.Sede;
 import SistemaAlquiler.Vehiculo;
-import SistemaAlquiler.*;
+import SistemaAlquiler.VehiculoRentalSystem;
+
+
 
 public class InterfazEmpleado extends JFrame {
+
+
 	Inventario inventario;
 	VehiculoRentalSystem rentalSystem;
 	//InterfazCliente interfazCliente;
@@ -210,12 +230,14 @@ public class InterfazEmpleado extends JFrame {
         			double PrecioBase = reservaEvaluada.getPrecioBase();
         			double PrecioAbonado = reservaEvaluada.getPrecioAbonado();
         			double PrecioConductores = reservaEvaluada.getPrecioConductores(PrecioBase, categoria.getvalorAdicionalConductor());
-        			double PrecioTodo = PrecioAbonado-PrecioConductores;
+        			double PrecioTodo = PrecioBase+PrecioConductores-PrecioAbonado;
         			error = false;
         			
         			
         			if(pasarela != null) {
         				realizarPago(pasarela,PrecioTodo);
+        				JOptionPane.showMessageDialog(null, "El total que se le descontará de la tarjeta es de: " + PrecioTodo);
+        				generarPDF(reservaEvaluada, PrecioTodo);
         			}
         			
         			for(Vehiculo car : rentalSystem.getVehiculos()) {
@@ -313,7 +335,7 @@ public class InterfazEmpleado extends JFrame {
         );
 
         if (seleccion == -1) {
-            // El usuario cerró el cuadro de diálogo
+ 
             return null;
         }
 
@@ -321,10 +343,10 @@ public class InterfazEmpleado extends JFrame {
     }
     
     public void realizarPago(String pasarela, double monto) {
-        // Solicitar el número de tarjeta al usuario
+       
         String numeroTarjeta = JOptionPane.showInputDialog("Ingrese el número de tarjeta:");
 
-        // Verificar que el número de tarjeta no sea nulo y no esté vacío
+
         if (numeroTarjeta == null || numeroTarjeta.isEmpty()) {
             JOptionPane.showMessageDialog(
                     null,
@@ -335,11 +357,11 @@ public class InterfazEmpleado extends JFrame {
             return;
         }
 
-        // Resto del código para obtener nombreTitular, monto y fechaVencimiento (puedes implementarlo)
+      
      // Solicitar el nombre del titular de la tarjeta
         String nombreTitular = JOptionPane.showInputDialog("Ingrese el nombre del titular de la tarjeta:");
 
-        // Verificar que el nombre del titular no sea nulo y no esté vacío
+
         if (nombreTitular == null || nombreTitular.isEmpty()) {
             JOptionPane.showMessageDialog(
                     null,
@@ -366,10 +388,10 @@ public class InterfazEmpleado extends JFrame {
             return;
         }
 
-        // Solicitar la fecha de vencimiento de la tarjeta
+   
         String fechaVencimientoStr = JOptionPane.showInputDialog("Ingrese la fecha de vencimiento de la tarjeta (MM/yyyy):");
 
-        // Verificar que la fecha de vencimiento no sea nula, no esté vacía y sea un formato válido
+
         if (fechaVencimientoStr == null || fechaVencimientoStr.isEmpty() || !fechaVencimientoStr.matches("\\d{2}/\\d{4}")) {
             JOptionPane.showMessageDialog(
                     null,
@@ -380,7 +402,7 @@ public class InterfazEmpleado extends JFrame {
             return;
         }
 
-        // Convertir la fecha de vencimiento a un objeto Date
+    
         Date fechaVencimiento;
         try {
             SimpleDateFormat dateFormat = new SimpleDateFormat("MM/yyyy");
@@ -447,7 +469,85 @@ public class InterfazEmpleado extends JFrame {
             );
         }
     }
+    private void generarPDF(Reserva reserva, double precioTotal) {
 
+        PDDocument document = new PDDocument();
+        PDPage page = new PDPage();
+        document.addPage(page);
+
+        try {
+            PDPageContentStream contentStream = new PDPageContentStream(document, page);
+
+  
+            contentStream.setFont(PDType1Font.HELVETICA_BOLD, 12);
+
+            contentStream.beginText();
+            contentStream.newLineAtOffset(50, 700);
+            contentStream.showText("-------FACTURA VEHICULO RENTAL SYSTEM-----");
+            contentStream.newLineAtOffset(0, -20);
+            contentStream.showText("Información de la Reserva:");
+            contentStream.newLineAtOffset(0, -20);
+            contentStream.showText("- Cliente: " + reserva.getCliente());
+            contentStream.newLineAtOffset(0, -20);
+            contentStream.showText("- Vehículo: " + reserva.getIdCarro());
+            contentStream.newLineAtOffset(0, -20);
+            contentStream.showText("- Precio Total: " + precioTotal);
+            contentStream.newLineAtOffset(0, -20);
+            contentStream.showText("- Fecha de retorno: " + reserva.getFechaRetorno());
+            contentStream.newLineAtOffset(0, -20);
+            contentStream.showText("- ID sede donde devolver vehículo: " + reserva.getIdSedeDevolver());
+            contentStream.newLineAtOffset(0, -20);
+            contentStream.showText("- ID sede donde recoger vehículo: " + reserva.getIdSedeRecoger());
+            contentStream.newLineAtOffset(0, -20);
+         
+            contentStream.endText();
+
+    
+            File imageFile = new File("Entrega3/firmaAdmi.png");  
+            PDImageXObject image = LosslessFactory.createFromImage(document, ImageIO.read(imageFile));
+            float scale = 0.5f; 
+            contentStream.drawImage(image, 50, 400, image.getWidth() * scale, image.getHeight() * scale);
+            contentStream.beginText();
+            contentStream.newLineAtOffset(50, 350);
+            contentStream.showText("Firma administrador general");
+            contentStream.endText();
+
+ 
+            contentStream.close();
+
+            // Guarda el PDF en un archivo
+            String pdfFileName = "Reserva_" + reserva.getIdCarro() + ".pdf";
+            document.save(pdfFileName);
+            document.close();
+
+            File pdfFile = new File(pdfFileName);
+            if (Desktop.isDesktopSupported()) {
+                Desktop.getDesktop().open(pdfFile);
+            } else {
+                JOptionPane.showMessageDialog(
+                        null,
+                        "No se puede abrir el visor de PDF predeterminado.",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            }
+
+            JOptionPane.showMessageDialog(
+                    null,
+                    "Archivo PDF generado con éxito: " + pdfFileName,
+                    "Generación de PDF",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+        } catch (IOException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(
+                    null,
+                    "Error al generar el archivo PDF",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
+    }
 
     
     

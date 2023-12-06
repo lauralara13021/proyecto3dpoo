@@ -279,30 +279,16 @@ public class InterfazCliente extends JFrame{
     	            @Override
     	            public void actionPerformed(ActionEvent e) {
     	                // Mostrar cuadro de diálogo con opciones de pago
-    	                String[] opcionesPago = {"Tarjeta de Crédito", "Transferencia Bancaria", "Efectivo"};
-    	                String opcionSeleccionada = (String) JOptionPane.showInputDialog(null,
-    	                        "Seleccione una opción de pago:",
-    	                        "Opciones de Pago",
-    	                        JOptionPane.QUESTION_MESSAGE,
-    	                        null,
-    	                        opcionesPago,
-    	                        opcionesPago[0]);
-
-    	                if (opcionSeleccionada != null) {
-    	                    // Usuario seleccionó una opción, ahora puedes continuar con el resto de las acciones
-    	                    totalPrice[0] = rentalSystem.seleccionarSeguros(reservaFinal, totalPrice[0], diasRentaFinal);
-    	                    reservaFinal.setPrecio(totalPrice[0]);
-    	                    rentalSystem.addReserva(reservaFinal);
-    	                    rentalSystem.escribirReserva(reservaFinal);
-    	                    AgendaCarro indisponibilidad = new AgendaCarro(startDate, endDate, "Reservado");
-    	                    rentalSystem.addAgendasCarros(selectedCar.getVehiculoId(), indisponibilidad);
-    	                    rentalSystem.escribirAgendasCarros(selectedCar.getVehiculoId(), indisponibilidad);
-    	                    JOptionPane.showMessageDialog(null, "Alquiler realizado exitosamente");
-    	                    // Otras acciones...
-    	                } else {
-    	                    // Usuario cerró el cuadro de diálogo o no seleccionó ninguna opción
-    	                    JOptionPane.showMessageDialog(null, "Operación cancelada");
-    	                }
+    	            	// Otras acciones...
+    	                totalPrice[0] = rentalSystem.seleccionarSeguros(reservaFinal, totalPrice[0], diasRentaFinal);
+    	                reservaFinal.setPrecio(totalPrice[0]);
+    	                rentalSystem.addReserva(reservaFinal);
+    	                rentalSystem.escribirReserva(reservaFinal);
+    	                AgendaCarro indisponibilidad = new AgendaCarro(startDate, endDate, "Reservado");
+    	                rentalSystem.addAgendasCarros(selectedCar.getVehiculoId(), indisponibilidad);
+    	                rentalSystem.escribirAgendasCarros(selectedCar.getVehiculoId(), indisponibilidad);
+    	                JOptionPane.showMessageDialog(null, "Alquiler realizado exitosamente");
+    	                // Otras acciones...
     	            }
     	        });
 
