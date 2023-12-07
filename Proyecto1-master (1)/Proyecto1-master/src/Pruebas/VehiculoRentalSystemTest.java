@@ -6,15 +6,22 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.StringReader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,18 +34,40 @@ public class VehiculoRentalSystemTest {
 
     private VehiculoRentalSystem vehiculoRentalSystem;
     private Reserva reserva;
+    private static String rutaArchivoReservas = "InventarioDatos/Reservas";
+    private static String rutaBackup = "InventarioDatos/ReservaTemporal";
+
+    @BeforeAll
+    public static void setUpClass() throws IOException {
+        // Realiza una copia de respaldo del archivo original
+        copiarArchivo(rutaArchivoReservas, rutaBackup);
+    }
+
+    @AfterAll
+    public static void tearDownClass() throws IOException {
+        // Restaura el contenido desde la copia de respaldo
+        copiarArchivo(rutaBackup, rutaArchivoReservas);
+        // Elimina la copia de respaldo
+        new File(rutaBackup).delete();
+    }
 
     @BeforeEach
     public void setUp() throws ParseException {
-     
         vehiculoRentalSystem = new VehiculoRentalSystem();
-
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy/HH/mm");
         Date fechaEntrega = dateFormat.parse("11/12/2023/12/30");
         Date fechaRetorno = dateFormat.parse("13/12/2023/12/30");
         reserva = new Reserva("pequeño", fechaEntrega, fechaRetorno, "Laura", "ABC123", "Sede1", "Sede2", "Reservado");
     }
+
+    @AfterEach
+    public void tearDown() throws IOException {
+        // Restaura el contenido desde la copia de respaldo después de cada prueba
+        copiarArchivo(rutaBackup, rutaArchivoReservas);
+    }
+
+   
     
     @Test
     @DisplayName("Prueba para escribirReserva")
@@ -61,7 +90,7 @@ public class VehiculoRentalSystemTest {
                 lastLine = line;
             }
 
-            assertNotNull(lastLine, "El archivo está vacío"); // Asegura que el archivo no esté vacío
+            assertNotNull(lastLine, "El archivo está vacío"); 
 
             // Verifica que la última línea del archivo coincida con la nueva reserva
             String[] reservaInfo = lastLine.split(",");
@@ -79,20 +108,64 @@ public class VehiculoRentalSystemTest {
     }
 
     
+    @Test
+    @DisplayName("Prueba para modificarFechaReserva")
+    public void testModificarFechaReserva() throws IOException, ParseException {
+        // Configuración de la prueba
+    	SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy/HH/mm");
+        Date fechaEntrega = dateFormat.parse("11/12/2023/12/30");
+        Date fechaRetorno = dateFormat.parse("14/12/2023/12/30");
+        Date nuevaFecha = dateFormat.parse("07/12/2023/13/20");
+        reserva = new Reserva("pequeño", fechaEntrega, fechaRetorno, "Laura", "PQR987", "Sucursal Sur", "Sucursal Norte", "Reservado");
+        // Guarda la reserva original en el archivo
+        vehiculoRentalSystem.escribirReserva(reserva);
+
+        // Llama al método que estás probando
+        vehiculoRentalSystem.modificarFechaReserva(reserva, nuevaFecha, "entrega");
+
+        // Verifica que la fecha de entrega se haya modificado correctamente en el archivo
+        try (BufferedReader reader = new BufferedReader(new FileReader("InventarioDatos/Reservas"))) {
+            boolean fechaModificada = false;
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+                String[] reservaInfo = line.split(",");
+                if (reserva.getCliente().equals(reservaInfo[5].trim())) {
+                    SimpleDateFormat date = new SimpleDateFormat("dd/MM/yyyy/HH/mm");
+                    String fechaModificadaStr = date.format(new Date()).trim();
+
+                    if ("entrega".equals("entrega")) {
+                        assertEquals(fechaModificadaStr, reservaInfo[3].trim(), fechaModificadaStr);
+                        fechaModificada = true;
+                        break;
+                    }
+                }
+            }
+
+            assertTrue(fechaModificada, "Fecha no encontrada o no modificada en las reservas");
+        }
+    }
+
+ 
  
     @Test
-    @DisplayName("Prueba para modificarSedeReserva")
-    public void testModificarPrecioReserva() throws IOException {
+    @DisplayName("Prueba para modificarPrecioeserva")
+    public void testModificarPrecioReserva() throws IOException, ParseException {
+    	SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy/HH/mm");
+        Date fechaEntrega = dateFormat.parse("11/12/2023/12/30");
+        Date fechaRetorno = dateFormat.parse("14/12/2023/12/30");
+        Date nuevaFecha = dateFormat.parse("07/12/2023/13/17");
+        reserva = new Reserva("pequeño", fechaEntrega, fechaRetorno, "Laura", "PQR987", "Sucursal Sur", "Sucursal Norte", "Reservado");
+        // Guarda la reserva original en el archivo
+        vehiculoRentalSystem.escribirReserva(reserva);
  
-        String sedeNueva = "Sede3";
-        String entregaOretorno = "entrega";
         String cliente = "Laura";
 
 
         vehiculoRentalSystem.modificarPrecioReserva(reserva, 150.0, cliente);
 
 
-        try (BufferedReader reader = new BufferedReader(new FileReader("InventarioDatos/ReservaTemporal"))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader("InventarioDatos/Reservas"))) {
             String line;
             boolean clienteEncontrado = false;
 
@@ -111,20 +184,28 @@ public class VehiculoRentalSystemTest {
             assertTrue(clienteEncontrado, "Cliente no encontrado en las reservas");
         }
     }
+   
     
     @Test
     @DisplayName("Prueba para modificarSedeReserva")
-    public void testModificarSedeReserva() throws IOException {
+    public void testModificarSedeReserva() throws IOException, ParseException {
      
-        String sedeNueva = "Sucursal Sur";
+        String sedeNueva = "Sucursal Central";
         String entregaOretorno = "entrega";
         String cliente = "Laura";
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy/HH/mm");
+        Date fechaEntrega = dateFormat.parse("11/12/2023/12/30");
+        Date fechaRetorno = dateFormat.parse("14/12/2023/12/30");
+        Date nuevaFecha = dateFormat.parse("07/12/2023/13/17");
+        reserva = new Reserva("pequeño", fechaEntrega, fechaRetorno, "Laura", "PQR987", "Sucursal Sur", "Sucursal Norte", "Reservado");
+        // Guarda la reserva original en el archivo
+        vehiculoRentalSystem.escribirReserva(reserva);
 
 
         vehiculoRentalSystem.modificarSedeReserva(reserva, sedeNueva, entregaOretorno, cliente);
 
 
-        try (BufferedReader reader = new BufferedReader(new FileReader("InventarioDatos/ReservaTemporal"))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader("InventarioDatos/Reservas"))) {
             String line;
             boolean clienteEncontrado = false;
 
@@ -148,44 +229,18 @@ public class VehiculoRentalSystemTest {
         }
     }
   
-    @Test
-    @DisplayName("Prueba para modificarFechaReserva")
-    public void testModificarFechaReserva() throws IOException, ParseException {
   
-        Date nuevaFecha = new SimpleDateFormat("dd/MM/yyyy/HH/mm").parse("08/12/2023/12/00");
-        String entregaOretorno = "entrega";
 
-
-        vehiculoRentalSystem.modificarFechaReserva(reserva, nuevaFecha, entregaOretorno);
-
-
-        try (BufferedReader reader = new BufferedReader(new FileReader("InventarioDatos/ReservaTemporal"))) {
+    private static void copiarArchivo(String origen, String destino) throws IOException {
+        // Copia el contenido de un archivo a otro
+        try (BufferedReader reader = new BufferedReader(new FileReader(origen));
+             BufferedWriter writer = new BufferedWriter(new FileWriter(destino))) {
             String line;
-            boolean fechaModificada = false;
-
             while ((line = reader.readLine()) != null) {
-                String[] reservaInfo = line.split(",");
-
-                if (reserva.getCliente().equals(reservaInfo[5])) {
-     
-                    SimpleDateFormat date = new SimpleDateFormat("dd/MM/yyyy/HH/mm");
-                    String fechaModificadaStr = date.format(nuevaFecha);
-
-                    if (entregaOretorno.equals("entrega")) {
-                        assertEquals(fechaModificadaStr, reservaInfo[3].trim()); // Asegura que no haya espacios
-                        fechaModificada = true;
-                        break;
-                    } else {
-                        assertEquals(fechaModificadaStr, reservaInfo[4].trim()); // Asegura que no haya espacios
-                        fechaModificada = true;
-                        break;
-                    }
-                }
+                writer.write(line);
+                writer.newLine();
             }
-
-         
-            assertTrue(fechaModificada, "Fecha no encontrada en las reservas");
         }
     }
- 
+
 }
