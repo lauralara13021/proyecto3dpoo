@@ -242,6 +242,7 @@ public class Reserva {
 		this.precioAbonado = precio;
 	}
 	
+	
 	/**
      * Calcula el precio total de la reserva con conductores adicionales.
      *
@@ -318,5 +319,9 @@ public class Reserva {
    */
 	public void setIdSedeDevolver(String IdSedeDevolver) {
 		this.IdSedeDevolver = IdSedeDevolver;
+	}
+	
+	public List<String> getConductores() {
+		return this.conductores;
 	}
 }
