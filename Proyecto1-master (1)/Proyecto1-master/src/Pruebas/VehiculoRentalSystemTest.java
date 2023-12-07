@@ -1,6 +1,7 @@
 package Pruebas;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -38,6 +39,47 @@ public class VehiculoRentalSystemTest {
         Date fechaRetorno = dateFormat.parse("13/12/2023/12/30");
         reserva = new Reserva("pequeño", fechaEntrega, fechaRetorno, "Laura", "ABC123", "Sede1", "Sede2", "Reservado");
     }
+    
+    @Test
+    @DisplayName("Prueba para escribirReserva")
+    public void testEscribirReserva() throws IOException, ParseException {
+        // Configuración de la prueba
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy/HH/mm");
+        Date fechaEntrega = dateFormat.parse("11/12/2023/12/30");
+        Date fechaRetorno = dateFormat.parse("13/12/2023/12/30");
+        reserva = new Reserva("pequeño", fechaEntrega, fechaRetorno, "Laura", "PQR987", "Sucursal Sur", "Sucursal Norte", "Reservado");
+
+        // Llama al método que estás probando
+        vehiculoRentalSystem.escribirReserva(reserva);
+
+        // Verifica que la reserva se haya escrito correctamente al final del archivo
+        try (BufferedReader reader = new BufferedReader(new FileReader("InventarioDatos/Reservas"))) {
+            String lastLine = null;
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+                lastLine = line;
+            }
+
+            assertNotNull(lastLine, "El archivo está vacío"); // Asegura que el archivo no esté vacío
+
+            // Verifica que la última línea del archivo coincida con la nueva reserva
+            String[] reservaInfo = lastLine.split(",");
+            assertEquals(reserva.getCategoria(), reservaInfo[0].trim());
+            assertEquals(reserva.getIdSedeRecoger(), reservaInfo[1].trim());
+            assertEquals(reserva.getIdSedeDevolver(), reservaInfo[2].trim());
+            assertEquals(dateFormat.format(reserva.getFechaEntrega()), reservaInfo[3].trim());
+            assertEquals(dateFormat.format(reserva.getFechaRetorno()), reservaInfo[4].trim());
+            assertEquals(reserva.getCliente(), reservaInfo[5].trim());
+            assertEquals(reserva.getIdCarro(), reservaInfo[6].trim());
+            assertEquals(String.valueOf(reserva.getPrecioBase()), reservaInfo[7].trim());
+            assertEquals(String.valueOf(reserva.getPrecioAbonado()), reservaInfo[8].trim());
+            assertEquals(reserva.getEstado().trim(), reservaInfo[9].trim());
+        }
+    }
+
+    
+ 
     @Test
     @DisplayName("Prueba para modificarSedeReserva")
     public void testModificarPrecioReserva() throws IOException {
@@ -50,7 +92,7 @@ public class VehiculoRentalSystemTest {
         vehiculoRentalSystem.modificarPrecioReserva(reserva, 150.0, cliente);
 
 
-        try (BufferedReader reader = new BufferedReader(new FileReader("InventarioDatos/Reservas"))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader("InventarioDatos/ReservaTemporal"))) {
             String line;
             boolean clienteEncontrado = false;
 
@@ -82,7 +124,7 @@ public class VehiculoRentalSystemTest {
         vehiculoRentalSystem.modificarSedeReserva(reserva, sedeNueva, entregaOretorno, cliente);
 
 
-        try (BufferedReader reader = new BufferedReader(new FileReader("InventarioDatos/Reservas"))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader("InventarioDatos/ReservaTemporal"))) {
             String line;
             boolean clienteEncontrado = false;
 
@@ -117,7 +159,7 @@ public class VehiculoRentalSystemTest {
         vehiculoRentalSystem.modificarFechaReserva(reserva, nuevaFecha, entregaOretorno);
 
 
-        try (BufferedReader reader = new BufferedReader(new FileReader("InventarioDatos/Reservas"))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader("InventarioDatos/ReservaTemporal"))) {
             String line;
             boolean fechaModificada = false;
 
@@ -145,5 +187,5 @@ public class VehiculoRentalSystemTest {
             assertTrue(fechaModificada, "Fecha no encontrada en las reservas");
         }
     }
-
+ 
 }
